@@ -2,14 +2,14 @@
 #include <WiFi.h>
 #include <esp32cam.h>
 
-const char* WIFI_SSID = "YOUR_WIFI_NAME";
-const char* WIFI_PASS = "YOUR_WIFI_PASSWORD";
+const char* WIFI_SSID = "281G26";
+const char* WIFI_PASS = "hotspot1";
 
 WebServer server(80);
 
 // Set resolution (Lower = Higher FPS)
 // Choices: QVGA(320x240), VGA(640x480), SVGA(800x600)
-static auto hiRes = esp32cam::Resolution::find(640, 480);
+static auto hiRes = esp32cam::Resolution::find(800, 600);
 
 void handleStream() {
   auto client = server.client();
@@ -43,6 +43,7 @@ void setup() {
   cfg.setPins(pins::AiThinker); // Most common model
   cfg.setResolution(hiRes);
   cfg.setBufferCount(2);
+  cfg.setXclk(20);
   cfg.setJpeg(80); // Quality 10-63 (lower is better quality)
 
   if (!Camera.begin(cfg)) {

@@ -1,7 +1,9 @@
 import cv2
+import numpy
 
-ESP32_IP = ""   
-url = f"http://{ESP32_IP}:81/stream"
+
+ESP32_IP = "10.47.224.1"   
+url = f"http://{ESP32_IP}/stream"
 
 cap = cv2.VideoCapture(url)
 
