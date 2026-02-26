@@ -1,4 +1,4 @@
-#### ECE516 Project : Gesture-controlled aquatic interface
+# ECE516 Project : Gesture-controlled aquatic interface
 
 ## Intro
 
@@ -17,6 +17,11 @@ Project files are located inside the `project` directory and are separated into 
 ## Additional Information
 
 Code used in labs for the ECE516 course can also be found here.
-Lab 1: Modifying Camera Parameters
-Lab 2: Metaveillography (Observing camera feedback)
-Lab 3: Sequential Wave-Imprinting Machine (SWIM)
+- [Lab 1: Modifying Camera Parameters](/lab1/)
+[Lab 2: Metaveillography](/lab2/) (Observing camera feedback)
+[Lab 3: Sequential Wave-Imprinting Machine](/lab3/) (SWIM)
+
+
+## License
+
+The contents of this repository are protected by the MIT License. See [License](/LICENSE) for more details.
