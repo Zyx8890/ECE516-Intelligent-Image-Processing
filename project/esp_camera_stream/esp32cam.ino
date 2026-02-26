@@ -1,3 +1,6 @@
+// MAKE SURE TO USE ESP32-Dev module with esp32cam library
+// OR AI-THinker-cam-esp module
+
 #include <WebServer.h>
 #include <WiFi.h>
 #include <esp32cam.h>
