@@ -94,7 +94,6 @@ def main():
                     cv2.putText(frame, "R", (x_min - 20, y_min - 20),cv2.FONT_HERSHEY_DUPLEX,1.5,(255, 255, 255),2)
 
         cv2.imshow("ESP32-CAM Live Stream", frame)
-        #cv2.imshow("ESP32-CAM Live Stream", cv2.flip(frame, 1))
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
