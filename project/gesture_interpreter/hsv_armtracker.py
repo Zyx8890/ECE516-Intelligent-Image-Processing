@@ -53,7 +53,7 @@ while True:
             dy = extBot[1] - extTop[1]
             angle = np.degrees(np.arctan2(dx, dy))
             cv2.putText(frame, f"Angle: {int(angle)}deg", (10, 30), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
     cv2.imshow('HSV Arm Detection', frame)
     cv2.imshow('Mask (Binary)', mask) # Debugging window
