@@ -96,10 +96,10 @@ while cap.isOpened():
                 if diff > 0.05: 
                     
                     navigation = "right"
-                    mouse.move(1,0)
+                    mouse.move(up_value,0)
                 elif diff < -0.05: 
                     navigation = "left"
-                    mouse.move(-1,0)
+                    mouse.move(-up_value,0)
                 else: 
                     navigation = "straight"
                     mouse.move(0,up_value)
