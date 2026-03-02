@@ -1,5 +1,12 @@
 import cv2
 import mediapipe as mp
+import pynput
+from pynput.mouse import Controller, Button
+# from pynput.keyboard import Key, Controller
+mouse = Controller()
+current_pos = mouse.position
+up_value =0
+print(f'Current mouse position -> {current_pos}')
 
 mp_hands = mp.solutions.hands #pre-trained DL model for hand recognition
 hands = mp_hands.Hands(
@@ -77,6 +84,8 @@ while cap.isOpened():
                 cv2.putText(frame, str(sum(fingerUP)), (x_max, y_min - 20),cv2.FONT_HERSHEY_DUPLEX,1.5,(255, 255, 255),2)
                 cv2.putText(frame, "L", (x_min - 20, y_min - 20),cv2.FONT_HERSHEY_DUPLEX,1.5,(255, 255, 255),2)
 
+                up_value = sum(fingerUP)
+
             # 5. navigate with right hand
             if label == "Right":
                 wrist_x = hand_landmarks.landmark[9].x
@@ -85,11 +94,15 @@ while cap.isOpened():
                 # calculate the x difference of middle finger and wrist
                 diff = hand_landmarks.landmark[9].x - hand_landmarks.landmark[0].x
                 if diff > 0.05: 
+                    
                     navigation = "right"
+                    mouse.move(1,0)
                 elif diff < -0.05: 
                     navigation = "left"
+                    mouse.move(-1,0)
                 else: 
                     navigation = "straight"
+                    mouse.move(0,up_value)
 
                 cv2.putText(frame, navigation, (x_max, y_min - 20),cv2.FONT_HERSHEY_DUPLEX,1.5,(255, 255, 255),2)
                 cv2.putText(frame, "R", (x_min - 20, y_min - 20),cv2.FONT_HERSHEY_DUPLEX,1.5,(255, 255, 255),2)
