@@ -1,5 +1,6 @@
 import cv2 
 import mediapipe as mp
+from pathlib import Path
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
@@ -10,7 +11,7 @@ from mediapipe.tasks.python import vision
 
 
 # NOTE: change this to your absolute path for the model
-model_path = r"C:/Users/varun/Documents/Masters year 1 files/ECE 516/ECE516-Intelligent-Image-Processing/project/gesture_interpreter/hand_landmarker.task"# set up hand detection model
+model_path = str(Path(__file__).resolve().parent / "hand_landmarker.task") # set up hand detection model
 BaseOptions = mp.tasks.BaseOptions
 HandLandmarker = mp.tasks.vision.HandLandmarker
 HandLandmarkerOptions = mp.tasks.vision.HandLandmarkerOptions
@@ -25,9 +26,10 @@ ESP32_IP = "10.47.224.1"
 
 # path = f"http://{ESP32_IP}/stream"
 
-# NOTE: change this to your absolute path for the video
-path = r"C:/Users/varun/Documents/Masters year 1 files/ECE 516/ECE516-Intelligent-Image-Processing/project/gesture_interpreter/testvideoswim.mp4"
 
+
+# NOTE: change this to your absolute path for the video
+path = str(Path(__file__).resolve().parent / "testvideoswim.mp4")
 
 # >>>>>> If using a pre-recorded video, use cv2 to open that video and replace while
 #        true to open new frame each loop
