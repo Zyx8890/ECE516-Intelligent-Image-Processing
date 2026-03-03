@@ -12,7 +12,7 @@ WebServer server(80);
 
 // Set resolution (Lower = Higher FPS)
 // Choices: QVGA(320x240), VGA(640x480), SVGA(800x600)
-static auto hiRes = esp32cam::Resolution::find(800, 600);
+static auto hiRes = esp32cam::Resolution::find(640, 480);
 
 void handleStream() {
   auto client = server.client();
@@ -46,7 +46,6 @@ void setup() {
   cfg.setPins(pins::AiThinker); // Most common model
   cfg.setResolution(hiRes);
   cfg.setBufferCount(2);
-  cfg.setXclk(20);
   cfg.setJpeg(80); // Quality 10-63 (lower is better quality)
 
   if (!Camera.begin(cfg)) {
