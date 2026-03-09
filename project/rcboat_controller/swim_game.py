@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 # ── HSV skin detection parameters ──────────────────────────────────────────
-LOWER_SKIN = np.array([0,  50,  80], dtype=np.uint8)
+LOWER_SKIN = np.array([0,  80,  80], dtype=np.uint8)
 UPPER_SKIN = np.array([20, 150, 255], dtype=np.uint8)
 
 # ── Game window settings ────────────────────────────────────────────────────
@@ -20,7 +20,7 @@ MAX_SPEED        = 8.0          # cap ball movement per frame
 DECEL            = 0.92         # friction when no arms detected
 
 # ── Video source ────────────────────────────────────────────────────────────
-VIDEO_PATH = str(Path(__file__).resolve().parent / "testvideoswim.mp4")
+VIDEO_PATH = str(Path(__file__).resolve().parent / "alexmove.mp4")
 
 
 def get_skin_mask(frame):

@@ -29,7 +29,7 @@ ESP32_IP = "10.47.224.1"
 
 
 # NOTE: change this to your absolute path for the video
-path = str(Path(__file__).resolve().parent / "testvideoswim.mp4")
+path = str(Path(__file__).resolve().parent / "alexmove.mp4")
 
 # >>>>>> If using a pre-recorded video, use cv2 to open that video and replace while
 #        true to open new frame each loop
