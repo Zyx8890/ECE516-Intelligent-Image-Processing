@@ -13,11 +13,13 @@ GAME_W, GAME_H   = 600, 600
 GRID_CELLS       = 10           # grid lines
 BALL_RADIUS      = 18
 TRAIL_LEN        = 40           # number of past positions to draw
-SPEED_SCALE      = 0.15         # pixel-velocity → ball pixels per frame
-DIRECTION_SCALE  = 0.25         # direction imbalance → horizontal pixels per frame
+SPEED_SCALE      = 0.07         # pixel-velocity → ball pixels per frame
 SMOOTHING        = 0.75         # exponential smoothing factor (higher = more inertia)
 MAX_SPEED        = 8.0          # cap ball movement per frame
 DECEL            = 0.92         # friction when no arms detected
+MAX_ANGLE        = np.radians(45)  # max steering angle from vertical
+ANGLE_STEER      = 0.06            # how fast angle changes when steering
+ANGLE_RETURN     = 0.08            # how fast angle snaps back to straight up
 
 # ── Video source ────────────────────────────────────────────────────────────
 VIDEO_PATH = str(Path(__file__).resolve().parent / "alexmove.mp4")
@@ -123,6 +125,7 @@ def main():
     trail      = []
     smooth_speed = 0.0
     smooth_dir   = 0.0
+    heading_angle = 0.0   # radians from straight up; positive = right
 
     # Previous arm centroids for velocity calculation
     prev_centroids = {}  # key: "L" or "R", value: (cx, cy)
@@ -177,8 +180,8 @@ def main():
         # ── Compute game signals ──────────────────────────────────────────
         if assigned:
             raw_speed = (speed_L + speed_R) / max(len(assigned), 1)
-            # direction: R faster → move right, L faster → move left
-            raw_dir   = (speed_R - speed_L) / (frame_w * 0.1 + 1e-5)
+            # direction: R faster → move left, L faster → move right
+            raw_dir   = (speed_L - speed_R) / (frame_w * 0.1 + 1e-5)
             raw_dir   = np.clip(raw_dir, -1.0, 1.0)
         else:
             raw_speed = 0.0
@@ -193,11 +196,17 @@ def main():
             # no arms → decelerate
             smooth_speed *= DECEL
 
-        fwd   = min(smooth_speed * SPEED_SCALE, MAX_SPEED)
-        horiz = np.clip(smooth_dir * DIRECTION_SCALE * frame_w, -MAX_SPEED, MAX_SPEED)
+        fwd = min(smooth_speed * SPEED_SCALE, MAX_SPEED)
 
-        ball_pos[0] += horiz
-        ball_pos[1] -= fwd   # move "up" = forward
+        # Steer heading angle based on direction signal; drift back to 0 when straight
+        if abs(smooth_dir) > 0.05:
+            heading_angle += smooth_dir * ANGLE_STEER
+            heading_angle = np.clip(heading_angle, -MAX_ANGLE, MAX_ANGLE)
+        else:
+            heading_angle *= (1.0 - ANGLE_RETURN)   # gradually re-align to vertical
+
+        ball_pos[0] += fwd * np.sin(heading_angle)
+        ball_pos[1] -= fwd * np.cos(heading_angle)  # move "up" = forward
 
         # Wrap at edges
         ball_pos[0] = ball_pos[0] % GAME_W
