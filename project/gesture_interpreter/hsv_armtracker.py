@@ -1,13 +1,15 @@
 import cv2
 import numpy as np
+from pathlib import Path
+VIDEO_PATH = str(Path(__file__).resolve().parent / "testvideoswim.mp4")
 
-cap = cv2.VideoCapture("testvideoswim.mp4")
+cap = cv2.VideoCapture(VIDEO_PATH)
 
 # Typical Skin Color Range (HSV)
 # Adjust LOWER_SKIN[2] (Value/Brightness) if the room is dark
 # Lower_skin is the floor range while upper_skin is the ceiling range. Anything in between is considered skin.
 # H, S and V values can be adjusted based on lighting conditions and skin tones and they are 3 different channels of the HSV color space. H (Hue) represents the color type, S (Saturation) represents the intensity of the color, and V (Value) represents the brightness of the color.
-LOWER_SKIN = np.array([0, 50, 80], dtype=np.uint8)
+LOWER_SKIN = np.array([0, 80, 80], dtype=np.uint8)
 UPPER_SKIN = np.array([20, 150, 255], dtype=np.uint8)
 
 while True:
