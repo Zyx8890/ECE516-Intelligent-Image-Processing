@@ -3,6 +3,8 @@ import numpy as np
 import pygame
 import sys
 from pathlib import Path
+from pynput.keyboard import Key, Controller
+keyboard = Controller()
 
 # ── HSV skin detection parameters ──────────────────────────────────────────
 LOWER_SKIN = np.array([0,  80,  80], dtype=np.uint8)
@@ -221,7 +223,22 @@ def main():
         draw_cv_overlay(frame, list(assigned.values()), speed_L, speed_R, smooth_speed, smooth_dir)
         cv2.imshow("Arm Detection", frame)
         cv2.imshow("Mask", mask)
+        
 
+        # Keyboard outputs
+        
+        if(smooth_speed > 0.2): 
+            keyboard.press(Key.up)
+        else:
+            keyboard.release(Key.up)
+        if(smooth_dir < -0.1):
+            keyboard.press(Key.left)
+        else:
+            keyboard.release(Key.left)
+        if(smooth_dir > 0.1):
+            keyboard.press(Key.right)
+        else:
+            keyboard.release(Key.right)
         # ── Draw Pygame window (always called so window stays alive) ──────
         draw_game(screen, ball_pos, trail, smooth_speed, smooth_dir)
 
