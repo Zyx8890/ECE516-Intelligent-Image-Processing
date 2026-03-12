@@ -4,6 +4,7 @@ from pynput.keyboard import Controller, Key
 import time
 
 keyboard = Controller()
+#test
 
 def handle_key(active, key, keyboard, state):
     if active and not state:
