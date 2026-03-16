@@ -68,12 +68,15 @@ def get_arm_candidates(mask, frame_w):
 
 def draw_cv_overlay(frame, arms, speed_L, speed_R, smooth_speed, smooth_dir):
     colors = [(255, 100, 0), (0, 100, 255)]  # orange=left, blue=right
-    labels = ["L", "R"]
-    for i, (cnt, cx, cy, _) in enumerate(arms):
-        cv2.drawContours(frame, [cnt], -1, colors[i], 2)
-        cv2.circle(frame, (cx, cy), 8, colors[i], -1)
-        cv2.putText(frame, labels[i], (cx + 10, cy),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, colors[i], 2)
+    for side, (cnt, cx, cy, _) in arms.items():
+        if side == "L":
+            color = colors[0]
+        else:
+            color = colors[1]
+        cv2.drawContours(frame, [cnt], -1, color, 2)
+        cv2.circle(frame, (cx, cy), 8, color, -1)
+        cv2.putText(frame, side, (cx + 10, cy),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, color, 2)
 
     cv2.putText(frame, f"Speed L: {speed_L:.1f}  R: {speed_R:.1f}", (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
@@ -112,7 +115,7 @@ def draw_game(screen, ball_pos, trail, smooth_speed, smooth_dir):
 
 
 def main():
-    cap = cv2.VideoCapture(VIDEO_PATH)
+    cap = cv2.VideoCapture(1)
     if not cap.isOpened():
         print(f"Error: cannot open {VIDEO_PATH}")
         sys.exit(1)
@@ -162,10 +165,14 @@ def main():
         # Assign left/right by x-centroid (smaller x = left arm)
         arms.sort(key=lambda a: a[1])  # sort by cx
         assigned = {}
-        if len(arms) >= 1:
-            assigned["L"] = arms[0]
         if len(arms) >= 2:
+            assigned["L"] = arms[0]
             assigned["R"] = arms[1]
+        elif len(arms) >=1:
+            if arms[0][1] < int(frame_w/2):
+                assigned["L"] = arms[0]
+            else:
+                assigned["R"] = arms[0]
 
         # Compute per-arm pixel velocity
         speed_L, speed_R = 0.0, 0.0
@@ -220,7 +227,7 @@ def main():
             trail.pop(0)
 
         # ── Draw OpenCV window ────────────────────────────────────────────
-        draw_cv_overlay(frame, list(assigned.values()), speed_L, speed_R, smooth_speed, smooth_dir)
+        draw_cv_overlay(frame, assigned, speed_L, speed_R, smooth_speed, smooth_dir)
         cv2.imshow("Arm Detection", frame)
         cv2.imshow("Mask", mask)
         
