@@ -13,8 +13,8 @@ const int R_FWD = 14; // D5
 const int R_REV = 12; // D6
 
 void allStop() {
-  digitalWrite(L_FWD, LOW); digitalWrite(L_REV, LOW);
-  digitalWrite(R_FWD, LOW); digitalWrite(R_REV, LOW);
+  digitalWrite(L_FWD, HIGH); digitalWrite(L_REV, HIGH);
+  digitalWrite(R_FWD, HIGH); digitalWrite(R_REV, HIGH);
 }
 
 void handleRoot() {
@@ -29,12 +29,12 @@ void handleRoot() {
 }
 
 void handleCmd() {
-  allStop(); // Always stop first to prevent overlapping signals
+   // Always stop first to prevent overlapping signals
   String p = server.arg("p");
-  if (p == "L_FWD") digitalWrite(L_FWD, HIGH);
-  else if (p == "L_REV") digitalWrite(L_REV, HIGH);
-  else if (p == "R_FWD") digitalWrite(R_FWD, HIGH);
-  else if (p == "R_REV") digitalWrite(R_REV, HIGH);
+  if (p == "L_FWD") digitalWrite(L_FWD, LOW);
+  else if (p == "L_REV") digitalWrite(L_REV, LOW);
+  else if (p == "R_FWD") digitalWrite(R_FWD, LOW);
+  else if (p == "R_REV") digitalWrite(R_REV, LOW);
   server.send(200, "text/plain", "OK");
 }
 
