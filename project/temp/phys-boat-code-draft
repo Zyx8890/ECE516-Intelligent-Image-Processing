@@ -1,0 +1,61 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+
+const char* ssid = "Reddit r/uoft2025";
+const char* password = "12345678915";
+
+ESP8266WebServer server(80);
+
+// Pin assignments
+const int L_FWD = 5;  // D1
+const int L_REV = 4;  // D2
+const int R_FWD = 14; // D5
+const int R_REV = 12; // D6
+
+void allStop() {
+  digitalWrite(L_FWD, LOW); digitalWrite(L_REV, LOW);
+  digitalWrite(R_FWD, LOW); digitalWrite(R_REV, LOW);
+}
+
+void handleRoot() {
+  String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1.0'></head><body>";
+  html += "<h1>Boat Control</h1>";
+  html += "<button onmousedown=\"fetch('/cmd?p=L_FWD')\" onmouseup=\"fetch('/stop')\">L-FWD</button>";
+  html += "<button onmousedown=\"fetch('/cmd?p=R_FWD')\" onmouseup=\"fetch('/stop')\">R-FWD</button><br>";
+  html += "<button onmousedown=\"fetch('/cmd?p=L_REV')\" onmouseup=\"fetch('/stop')\">L-REV</button>";
+  html += "<button onmousedown=\"fetch('/cmd?p=R_REV')\" onmouseup=\"fetch('/stop')\">R-REV</button><br>";
+  html += "<button onclick=\"fetch('/stop')\">STOP</button></body></html>";
+  server.send(200, "text/html", html);
+}
+
+void handleCmd() {
+  allStop(); // Always stop first to prevent overlapping signals
+  String p = server.arg("p");
+  if (p == "L_FWD") digitalWrite(L_FWD, HIGH);
+  else if (p == "L_REV") digitalWrite(L_REV, HIGH);
+  else if (p == "R_FWD") digitalWrite(R_FWD, HIGH);
+  else if (p == "R_REV") digitalWrite(R_REV, HIGH);
+  server.send(200, "text/plain", "OK");
+}
+
+void setup() {
+  // --- HARDWARE SAFETY ---
+  // Ensure pins are LOW before mode assignment
+  allStop(); 
+  pinMode(L_FWD, OUTPUT); pinMode(L_REV, OUTPUT);
+  pinMode(R_FWD, OUTPUT); pinMode(R_REV, OUTPUT);
+  
+  WiFi.begin(ssid, password);
+  // Wait for stable connection
+  while (WiFi.status() != WL_CONNECTED) { delay(500); }
+
+  server.on("/", handleRoot);
+  server.on("/cmd", handleCmd);
+  server.on("/stop", allStop);
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();
+  yield(); // Important: prevents the ESP8266 watchdog from resetting
+}
