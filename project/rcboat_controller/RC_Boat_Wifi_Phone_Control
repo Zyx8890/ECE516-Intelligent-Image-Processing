@@ -1,0 +1,81 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+
+const char* ssid = "Reddit r/uoft2025"; 
+const char* password = "12345678915";
+
+ESP8266WebServer server(80);
+
+// Pins
+const int ENA = 5;  const int IN1 = 4;  const int IN2 = 14; 
+const int ENB = 12; const int IN3 = 13; const int IN4 = 15;
+
+void handleRoot() {
+  String html = "<html><head><meta name='viewport' content='width=device-width, initial-scale=1'>";
+  html += "<style>body{text-align:center; font-family:sans-serif; background:#f4f4f4;} .box{background:white; padding:20px; margin:10px; border-radius:10px; shadow: 2px 2px 5px grey;} .slider{width:80%; height:40px;} .btn{padding:15px; margin:5px; width:40%; font-weight:bold;}</style></head><body>";
+  html += "<h1>Dual Motor Dash</h1>";
+  
+  // Motor A Control
+  html += "<div class='box'><h3>Motor A (Left)</h3>";
+  html += "<input type='range' class='slider' min='0' max='1023' value='0' onchange='fetch(\"/set?m=a&s=\"+this.value)'>";
+  html += "<br><button class='btn' onclick='fetch(\"/dir?m=a&d=f\")'>FWD</button>";
+  html += "<button class='btn' onclick='fetch(\"/dir?m=a&d=r\")'>REV</button></div>";
+
+  // Motor B Control
+  html += "<div class='box'><h3>Motor B (Right)</h3>";
+  html += "<input type='range' class='slider' min='0' max='1023' value='0' onchange='fetch(\"/set?m=b&s=\"+this.value)'>";
+  html += "<br><button class='btn' onclick='fetch(\"/dir?m=b&d=f\")'>FWD</button>";
+  html += "<button class='btn' onclick='fetch(\"/dir?m=b&d=r\")'>REV</button></div>";
+
+  // Master Stop
+  html += "<br><button class='btn' style='background:red; color:white; width:90%' onclick='location.reload(); fetch(\"/stop\")'>EMERGENCY STOP</button>";
+  
+  html += "</body></html>";
+  server.send(200, "text/html", html);
+}
+
+void handleSetSpeed() {
+  int speed = server.arg("s").toInt();
+  if (server.arg("m") == "a") analogWrite(ENA, speed);
+  else analogWrite(ENB, speed);
+  server.send(200, "text/plain", "OK");
+}
+
+void handleDirection() {
+  String m = server.arg("m");
+  String d = server.arg("d");
+  
+  int p1 = (m == "a") ? IN1 : IN3;
+  int p2 = (m == "a") ? IN2 : IN4;
+
+  if (d == "f") { digitalWrite(p1, HIGH); digitalWrite(p2, LOW); }
+  else { digitalWrite(p1, LOW); digitalWrite(p2, HIGH); }
+  
+  server.send(200, "text/plain", "OK");
+}
+
+void setup() {
+  Serial.begin(115200);
+  int pins[] = {ENA, IN1, IN2, ENB, IN3, IN4};
+  for(int i=0; i<6; i++) { pinMode(pins[i], OUTPUT); digitalWrite(pins[i], LOW); }
+  
+  analogWriteRange(1023);
+  analogWriteFreq(1000);
+
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
+  Serial.println(WiFi.localIP());
+
+  server.on("/", handleRoot);
+  server.on("/set", handleSetSpeed);
+  server.on("/dir", handleDirection);
+  server.on("/stop", [](){ 
+    analogWrite(ENA, 0); analogWrite(ENB, 0);
+    digitalWrite(IN1,0); digitalWrite(IN2,0); digitalWrite(IN3,0); digitalWrite(IN4,0);
+    server.send(200); 
+  });
+  
+  server.begin();
+}
+
+void loop() { server.handleClient(); }
