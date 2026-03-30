@@ -4,11 +4,11 @@ import cv2
 import numpy as np
 import sys
 from pathlib import Path
-from pynput.keyboard import Key, Controller
-keyboard = Controller()
+from gpiozero import LED
 import socket
 import subprocess
 import time
+from time import sleep
 
 
 
@@ -37,18 +37,17 @@ def send_command(command, sock, UDP_IP, UDP_PORT = 5005):
 
 def get_guest_ip():
     try:
-        # This command looks at the DHCP leases to see who the Pi gave an IP to
-        output = subprocess.check_output(["cat", "/var/lib/misc/dnsmasq.leases"]).decode()
-        # The file format is: [timestamp] [MAC] [IP] [Hostname] [ClientID]
-        lines = output.strip().split('\n')
-        if lines:
-            last_connected_device = lines[-1].split()
-            return last_connected_device[2] # Return the IP address
+        # Check the ARP table for the most recent device on the wireless interface
+        # This is more reliable than dnsmasq for NetworkManager hotspots
+        output = subprocess.check_output(["ip", "neigh", "show", "dev", "wlan0"]).decode()
+        for line in output.strip().split('\n'):
+            if "REACHABLE" in line or "DELAY" in line or "STALE" in line:
+                # The first element in the line is the IP address
+                return line.split()[0]
     except Exception as e:
         print(f"Error finding guest: {e}")
+    return False
     
-    return False # Fallback
-
 def get_skin_mask(frame):
     blurred = cv2.GaussianBlur(frame, (5, 5), 0)
     hsv     = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
@@ -108,31 +107,35 @@ def draw_cv_overlay(frame, arms, speed_L, speed_R, smooth_speed, smooth_dir):
 
 
 
-def setup_led():
-    # Set the LED to 'none' trigger so we can control it manually
-    os.system("echo none | sudo tee /sys/class/leds/led0/trigger > /dev/null")
+# def setup_led():
+#     # Set the LED to 'none' trigger so we can control it manually
+#     os.system("echo none | sudo tee /sys/class/leds/led0/trigger > /dev/null")
 
 def blink_led(times=1, delay=0.1):
-    for _ in range(times):
-        os.system("echo 1 | sudo tee /sys/class/leds/led0/brightness > /dev/null")
-        time.sleep(delay)
-        os.system("echo 0 | sudo tee /sys/class/leds/led0/brightness > /dev/null")
-        time.sleep(delay)
+    try:
+        # Using the sysfs path directly but via a context manager or better permissions
+        for _ in range(times):
+            subprocess.run(["sudo", "sh", "-c", "echo 1 > /sys/class/leds/led0/brightness"])
+            sleep(delay)
+            subprocess.run(["sudo", "sh", "-c", "echo 0 > /sys/class/leds/led0/brightness"])
+            sleep(delay)
+    except:
+        pass
 
 
 
 
 def main():
-    setup_led()
+    # setup_led()
     print("Waiting for Connection... ")
     UDP_IP = get_guest_ip()
     
     while(UDP_IP == False):
-        blink_led(4, 0.5)
+        # blink_led(4, 0.5)
         time.sleep(2)
         UDP_IP = get_guest_ip()
     print(f"Targeting Computer at: {UDP_IP}")
-    blink_led(5, 0.05)
+    # blink_led(5, 0.05)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
     
