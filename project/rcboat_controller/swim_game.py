@@ -24,7 +24,7 @@ ANGLE_STEER      = 0.06            # how fast angle changes when steering
 ANGLE_RETURN     = 0.08            # how fast angle snaps back to straight up
 
 # ── Video source ────────────────────────────────────────────────────────────
-VIDEO_PATH = str(Path(__file__).resolve().parent / "alexmove.mp4")
+VIDEO_PATH = str(Path(__file__).resolve().parent / "testvideo2.mp4")
 
 
 def get_skin_mask(frame):
@@ -115,7 +115,7 @@ def draw_game(screen, ball_pos, trail, smooth_speed, smooth_dir):
 
 
 def main():
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(VIDEO_PATH)
     if not cap.isOpened():
         print(f"Error: cannot open {VIDEO_PATH}")
         sys.exit(1)
@@ -234,18 +234,18 @@ def main():
 
         # Keyboard outputs
         
-        if(smooth_speed > 0.2): 
-            keyboard.press(Key.up)
-        else:
-            keyboard.release(Key.up)
-        if(smooth_dir < -0.1):
-            keyboard.press(Key.left)
-        else:
-            keyboard.release(Key.left)
-        if(smooth_dir > 0.1):
-            keyboard.press(Key.right)
-        else:
-            keyboard.release(Key.right)
+        # if(smooth_speed > 0.2): 
+        #     keyboard.press(Key.up)
+        # else:
+        #     keyboard.release(Key.up)
+        # if(smooth_dir < -0.1):
+        #     keyboard.press(Key.left)
+        # else:
+        #     keyboard.release(Key.left)
+        # if(smooth_dir > 0.1):
+        #     keyboard.press(Key.right)
+        # else:
+        #     keyboard.release(Key.right)
         # ── Draw Pygame window (always called so window stays alive) ──────
         draw_game(screen, ball_pos, trail, smooth_speed, smooth_dir)
 
