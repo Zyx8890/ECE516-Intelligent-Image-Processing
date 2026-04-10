@@ -1,10 +1,17 @@
+import os
+from datetime import datetime
 import cv2
 import numpy as np
-import pygame
 import sys
 from pathlib import Path
-from pynput.keyboard import Key, Controller
-keyboard = Controller()
+from gpiozero import LED
+import socket
+import subprocess
+import time
+from time import sleep
+
+VIDEO_PATH = str(Path(__file__).resolve().parent / "lian_freestyle.mp4")
+
 
 # ── HSV skin detection parameters ──────────────────────────────────────────
 LOWER_SKIN = np.array([0,  80,  80], dtype=np.uint8)
@@ -24,9 +31,24 @@ ANGLE_STEER      = 0.06            # how fast angle changes when steering
 ANGLE_RETURN     = 0.08            # how fast angle snaps back to straight up
 
 # ── Video source ────────────────────────────────────────────────────────────
-VIDEO_PATH = str(Path(__file__).resolve().parent / "lian_freestyle.mp4")
 
 
+def send_command(command, sock, UDP_IP, UDP_PORT = 5005):
+    sock.sendto(command.encode(), (UDP_IP, UDP_PORT))
+
+def get_guest_ip():
+    try:
+        # Check the ARP table for the most recent device on the wireless interface
+        # This is more reliable than dnsmasq for NetworkManager hotspots
+        output = subprocess.check_output(["ip", "neigh", "show", "dev", "wlan0"]).decode()
+        for line in output.strip().split('\n'):
+            if "REACHABLE" in line or "DELAY" in line or "STALE" in line:
+                # The first element in the line is the IP address
+                return line.split()[0]
+    except Exception as e:
+        print(f"Error finding guest: {e}")
+    return False
+    
 def get_skin_mask(frame):
     blurred = cv2.GaussianBlur(frame, (5, 5), 0)
     hsv     = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
@@ -85,45 +107,45 @@ def draw_cv_overlay(frame, arms, speed_L, speed_R, smooth_speed, smooth_dir):
     return frame
 
 
-def draw_game(screen, ball_pos, trail, smooth_speed, smooth_dir):
-    screen.fill((15, 15, 30))
 
-    # grid
-    cell = GAME_W // GRID_CELLS
-    for i in range(GRID_CELLS + 1):
-        pygame.draw.line(screen, (40, 40, 70), (i * cell, 0), (i * cell, GAME_H))
-        pygame.draw.line(screen, (40, 40, 70), (0, i * cell), (GAME_W, i * cell))
+# def setup_led():
+#     # Set the LED to 'none' trigger so we can control it manually
+#     os.system("echo none | sudo tee /sys/class/leds/led0/trigger > /dev/null")
 
-    # trail
-    for i, pos in enumerate(trail):
-        alpha = int(255 * i / max(len(trail), 1))
-        radius = max(3, int(BALL_RADIUS * i / max(len(trail), 1)))
-        pygame.draw.circle(screen, (alpha, 200, 100), (int(pos[0]), int(pos[1])), radius)
+def blink_led(times=1, delay=0.1):
+    try:
+        # Using the sysfs path directly but via a context manager or better permissions
+        for _ in range(times):
+            subprocess.run(["sudo", "sh", "-c", "echo 1 > /sys/class/leds/led0/brightness"])
+            sleep(delay)
+            subprocess.run(["sudo", "sh", "-c", "echo 0 > /sys/class/leds/led0/brightness"])
+            sleep(delay)
+    except:
+        pass
 
-    # ball
-    bx, by = int(ball_pos[0]), int(ball_pos[1])
-    pygame.draw.circle(screen, (255, 220, 50), (bx, by), BALL_RADIUS)
-    pygame.draw.circle(screen, (255, 255, 255), (bx, by), BALL_RADIUS, 2)
 
-    # HUD
-    font = pygame.font.SysFont("consolas", 18)
-    screen.blit(font.render(f"Speed: {smooth_speed:.2f}", True, (200, 255, 100)), (10, 10))
-    screen.blit(font.render(f"Direction: {'RIGHT' if smooth_dir > 0.1 else 'LEFT' if smooth_dir < -0.1 else 'STRAIGHT'}", True, (200, 255, 100)), (10, 35))
-    screen.blit(font.render("Q = quit", True, (120, 120, 120)), (10, GAME_H - 30))
-
-    pygame.display.flip()
 
 
 def main():
+    # setup_led()
+    print("Waiting for Connection... ")
+    UDP_IP = get_guest_ip()
+    
+    while(UDP_IP == False):
+        # blink_led(4, 0.5)
+        time.sleep(2)
+        UDP_IP = get_guest_ip()
+    print(f"Targeting Computer at: {UDP_IP}")
+    # blink_led(5, 0.05)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    
     cap = cv2.VideoCapture(VIDEO_PATH)
     if not cap.isOpened():
-        print(f"Error: cannot open {VIDEO_PATH}")
+        print(f"Error: cannot open Webcam feed")
         sys.exit(1)
 
-    pygame.init()
-    screen = pygame.display.set_mode((GAME_W, GAME_H))
-    pygame.display.set_caption("Swim Game — Arm Tracker")
-    clock = pygame.time.Clock()
+    
 
     # Ball state
     ball_pos   = [GAME_W / 2, GAME_H / 2]
@@ -137,14 +159,7 @@ def main():
 
     running = True
     while running:
-        # ── Pygame event handling ─────────────────────────────────────────
-        pygame.event.pump()  # keep OS window responsive during heavy CV frames
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_q:
-                running = False
-
+       
         if not running:
             break
 
@@ -227,36 +242,34 @@ def main():
             trail.pop(0)
 
         # ── Draw OpenCV window ────────────────────────────────────────────
-        draw_cv_overlay(frame, assigned, speed_L, speed_R, smooth_speed, smooth_dir)
-        cv2.imshow("Arm Detection", frame)
-        cv2.imshow("Mask", mask)
+        if os.environ.get('DISPLAY') is not None:
+            draw_cv_overlay(frame, assigned, speed_L, speed_R, smooth_speed, smooth_dir)
+            cv2.imshow("Arm Detection", frame)
+            cv2.imshow("Mask", mask)
         
 
         # Keyboard outputs
-        
-        # if(smooth_speed > 0.2): 
-        #     keyboard.press(Key.up)
-        # else:
-        #     keyboard.release(Key.up)
-        # if(smooth_dir < -0.1):
-        #     keyboard.press(Key.left)
-        # else:
-        #     keyboard.release(Key.left)
-        # if(smooth_dir > 0.1):
-        #     keyboard.press(Key.right)
-        # else:
-        #     keyboard.release(Key.right)
-        # ── Draw Pygame window (always called so window stays alive) ──────
-        draw_game(screen, ball_pos, trail, smooth_speed, smooth_dir)
+        movement = False
 
-        clock.tick(30)
+        if(smooth_speed > 0.2): 
+            send_command("FORWARD", sock, UDP_IP)
+            movement = True
+        if(smooth_dir < -0.1):
+            send_command("LEFT", sock, UDP_IP)
+            movement = True
+        if(smooth_dir > 0.1):
+            send_command("RIGHT", sock, UDP_IP)
+        if(movement == False):
+            send_command("STOP", sock, UDP_IP)
 
-        if cv2.waitKey(25) & 0xFF == ord('q'):
+        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3] # HH:MM:SS.mmm
+        print(f"Frame processed at: {timestamp}")
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
             running = False
 
     cap.release()
     cv2.destroyAllWindows()
-    pygame.quit()
 
 
 if __name__ == "__main__":
